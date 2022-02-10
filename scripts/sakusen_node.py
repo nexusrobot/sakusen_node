@@ -6,15 +6,8 @@ import smach
 import smach_ros
 
 from std_msgs.msg import Int32
-from geometry_msgs.msg import Twist
-
-
-import tf
-
-
-import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-import actionlib_msgs
+
 
 # Ref: https://hotblackrobotics.github.io/en/blog/2018/01/29/action-client-py/
 
@@ -22,10 +15,6 @@ import actionlib_msgs
 class SakusenNode():
     def __init__(self):
         self.sakusen_pub = rospy.Publisher('sakusen_number', Int32, queue_size=10)
-        
-        # velocity publisher
-        self.vel_pub = rospy.Publisher('cmd_vel', Twist,queue_size=1)
-        self.client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
 
         self.count = 0
 
