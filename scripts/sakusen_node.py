@@ -23,7 +23,7 @@ class BasicRun(smach.State):
         self.count = 0
 
     def sakutekiCallback(self, data):
-        rospy.loginfo('sakuteki_result received {}'.format(data))
+        rospy.loginfo('BasicRun sakuteki_result ={}'.format(data))
         self.sakutekiResult = str(data)
 
     def execute(self,userdata):
@@ -44,7 +44,7 @@ class RunawayRun(smach.State):
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
-        rospy.loginfo('sakuteki_result received {}'.format(data))
+        rospy.loginfo('RunawayRun sakuteki_result ={}'.format(data))
         self.sakutekiResult = str(data)
 
     def execute(self,userdata):
@@ -63,7 +63,7 @@ class RunawayRun(smach.State):
 class ChaseRun(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['enemyLost','enemyFound'])
-        self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
+#        self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
