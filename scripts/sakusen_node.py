@@ -14,7 +14,7 @@ from std_msgs.msg import Int32
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
 
-class AutoRun(smach.State):
+class BasicRun(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['enemyFound','attackChance'])
         self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
@@ -24,7 +24,7 @@ class AutoRun(smach.State):
         self.sakutekiResult = data
 
     def execute(self,userdata):
-        rospy.loginfo('Executing state AutoRun')
+        rospy.loginfo('Executing state BasicRun')
         rospy.sleep(1.0)
 
         if data == "Front":
@@ -33,7 +33,7 @@ class AutoRun(smach.State):
             return 'attackChance'
 
 
-class EscapeRun(smach.State):
+class RunawayRun(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['attackChance','enemyLost'])
         self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
@@ -43,7 +43,7 @@ class EscapeRun(smach.State):
         self.sakutekiResult = data
 
     def execute(self,userdata):
-        rospy.loginfo('Executing state EscapeRun')
+        rospy.loginfo('Executing state RunawayRun')
         rospy.sleep(1.0)
 
         if data == "Front":
@@ -52,16 +52,20 @@ class EscapeRun(smach.State):
             return 'attackChance'
 
 
-class AttackRun(smach.State):
+class ChaseRun(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['enemyLost','enemyFound'])
         self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
         self.sakutekiResult = ""
 
     def execute(self,userdata):
-        rospy.loginfo('Executing state AttackRun')
-        rospy.sleep(2.0)
-        return 'enemyLost'
+        rospy.loginfo('Executing state ChaseRun')
+        rospy.sleep(1.0)
+
+        if data == "Front":
+            return 'enemyFound'
+        elif data == "Side":
+            return 'attackChance'
 
 
 class SakusenNode():
@@ -70,9 +74,9 @@ class SakusenNode():
 
         sm_top = smach.StateMachine(outcomes=['succeeded'])
         with sm_top:
-            smach.StateMachine.add('Auto', AutoRun(), transitions={'enemyFound':'Escape', 'attackChance':'Attack'})
-            smach.StateMachine.add('Escape', EscapeRun(), transitions={'attackChance':'Attack', 'enemyLost':'Auto'})
-            smach.StateMachine.add('Attack', AttackRun(), transitions={'enemyLost':'Auto', 'enemyFound':'Escape'})
+            smach.StateMachine.add('Basic', BasicRun(), transitions={'enemyFound':'Runaway', 'attackChance':'Chase'})
+            smach.StateMachine.add('Runaway', RunawayRun(), transitions={'attackChance':'Chase', 'enemyLost':'Basic'})
+            smach.StateMachine.add('Chase', ChaseRun(), transitions={'enemyLost':'Basic', 'enemyFound':'Runaway'})
 
         sis = smach_ros.IntrospectionServer('sakusen_server', sm_top, '/SM_TOP')
         sis.start()
