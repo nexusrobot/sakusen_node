@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# smach
+# https://qiita.com/srs/items/3f5acc64a2faac48b63d
+
 import rospy
 import smach
 import smach_ros
@@ -9,13 +12,48 @@ from std_msgs.msg import Int32
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
 
-# Ref: https://hotblackrobotics.github.io/en/blog/2018/01/29/action-client-py/
+class AutoRun(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['enemyFound','attackChance'])
+
+    def execute(self,userdata):
+        rospy.loginfo('Executing state AutoRun')
+        rospy.sleep(2.0)
+        return 'enemyFound'
+
+
+class EscapeRun(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['attackChance','enemyLost'])
+
+    def execute(self,userdata):
+        rospy.loginfo('Executing state EscapeRun')
+        return 'attackChance'
+
+
+class AttackRun(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['enemyLost','enemyFound'])
+
+    def execute(self,userdata):
+        rospy.loginfo('Executing state AttackRun')
+        return 'enemyLost'
 
 
 class SakusenNode():
     def __init__(self):
         self.sakusen_pub = rospy.Publisher('sakusen_number', Int32, queue_size=10)
 
+        sm_top = smach.StateMachine(outcomes=['succeeded'])
+        with sm_top:
+            smach.StateMachine.add('Auto', AutoRun(), transitions={'enemyFound':'Escape', 'attackChance':'Attack'})
+            smach.StateMachine.add('Escape', EscapeRun(), transitions={'attackChance':'Attack', 'enemyLost':'Auto'})
+            smach.StateMachine.add('Attack', AttackRun(), transitions={'enemyLost':'Auto', 'enemyFound':'Escape'})
+
+        sis = smach_ros.IntrospectionServer('sakusen_server', sm_top, '/SM_TOP')
+        sis.start()
+        outcome = sm_top.execute()
+        sis.stop()
         self.count = 0
 
     def run(self):
