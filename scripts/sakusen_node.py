@@ -22,6 +22,7 @@ class BasicRun(smach.State):
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
+        rospy.loginfo('sakuteki_result received {}'.format(data))
         self.sakutekiResult = data
 
     def execute(self,userdata):
@@ -42,6 +43,7 @@ class RunawayRun(smach.State):
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
+        rospy.loginfo('sakuteki_result received {}'.format(data))
         self.sakutekiResult = data
 
     def execute(self,userdata):
@@ -62,6 +64,7 @@ class ChaseRun(smach.State):
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
+        rospy.loginfo('sakuteki_result received {}'.format(data))
         self.sakutekiResult = data
 
     def execute(self,userdata):
