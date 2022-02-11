@@ -17,75 +17,70 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
 class BasicRun(smach.State):
     def __init__(self):
-        #smach.State.__init__(self, outcomes=['enemyFound','attackChance','continue'])
         smach.State.__init__(self, outcomes=['enemyFound','attackChance'])
-        #self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
-        self.sakuteki_sub = rospy.Subscriber('test_topic', Int32, self.sakutekiCallback)
+        self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
         self.sakutekiResult = ""
         self.count = 0
 
     def sakutekiCallback(self, data):
         rospy.loginfo('sakuteki_result received {}'.format(data))
-        self.sakutekiResult = data
+        self.sakutekiResult = str(data)
 
     def execute(self,userdata):
         while not rospy.is_shutdown():
             rospy.loginfo('Executing state BasicRun')
             rospy.sleep(1.0)
 
-            print self.sakutekiResult
-            if self.count > 10:
+            if "Front" in self.sakutekiResult:
                 return 'enemyFound'
-            else:
-                self.count+=1
-#            if self.sakutekiResult == "Front":
-#                print "enemy found" 
-#                return 'enemyFound'
-#            elif self.sakutekiResult == "Side":
-#                return 'attackChance'
-        return 'continue'
+            elif "Side" in self.sakutekiResult:
+                return 'attackChance'
 
 
 class RunawayRun(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['attackChance','enemyLost','continue'])
+        smach.State.__init__(self, outcomes=['attackChance','enemyLost'])
         self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
         rospy.loginfo('sakuteki_result received {}'.format(data))
-        self.sakutekiResult = data
+        self.sakutekiResult = str(data)
 
     def execute(self,userdata):
-        rospy.loginfo('Executing state RunawayRun')
-        rospy.sleep(1.0)
+        while not rospy.is_shutdown():
+            rospy.loginfo('Executing state RunawayRun')
+            rospy.sleep(1.0)
 
-        if self.sakutekiResult == "Front":
-            return 'enemyFound'
-        elif self.sakutekiResult == "Side":
-            return 'attackChance'
-        return 'continue'
+            if "Front" in self.sakutekiResult:
+                self.sakutekiResult = ""
+                return 'attackChance'
+            elif "Side" in self.sakutekiResult:
+                self.sakutekiResult = ""
+                return 'enemyLost'
 
 
 class ChaseRun(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['enemyLost','enemyFound','continue'])
+        smach.State.__init__(self, outcomes=['enemyLost','enemyFound'])
         self.sakuteki_sub = rospy.Subscriber('sakuteki_result', String, self.sakutekiCallback)
         self.sakutekiResult = ""
 
     def sakutekiCallback(self, data):
         rospy.loginfo('sakuteki_result received {}'.format(data))
-        self.sakutekiResult = data
+        self.sakutekiResult = str(data)
 
     def execute(self,userdata):
-        rospy.loginfo('Executing state ChaseRun')
-        rospy.sleep(1.0)
+        while not rospy.is_shutdown():
+            rospy.loginfo('Executing state RunawayRun')
+            rospy.sleep(1.0)
 
-        if self.sakutekiResult == "Front":
-            return 'enemyFound'
-        elif self.sakutekiResult == "Side":
-            return 'attackChance'
-        return 'continue'
+            if "Front" in self.sakutekiResult:
+                self.sakutekiResult = ""
+                return 'enemyLost'
+            elif "Side" in self.sakutekiResult:
+                self.sakutekiResult = ""
+                return 'enemyFound'
 
 
 class SakusenNode():
@@ -94,10 +89,9 @@ class SakusenNode():
 
         sm_top = smach.StateMachine(outcomes=['succeeded'])
         with sm_top:
-            #smach.StateMachine.add('Basic', BasicRun(), transitions={'enemyFound':'Runaway', 'attackChance':'Chase', 'continue':'Basic'})
             smach.StateMachine.add('Basic', BasicRun(), transitions={'enemyFound':'Runaway', 'attackChance':'Chase'})
-            smach.StateMachine.add('Runaway', RunawayRun(), transitions={'attackChance':'Chase', 'enemyLost':'Basic', 'continue':'Runaway'})
-            smach.StateMachine.add('Chase', ChaseRun(), transitions={'enemyLost':'Basic', 'enemyFound':'Runaway', 'continue':'Chase'})
+            smach.StateMachine.add('Runaway', RunawayRun(), transitions={'attackChance':'Chase', 'enemyLost':'Basic'})
+            smach.StateMachine.add('Chase', ChaseRun(), transitions={'enemyLost':'Basic', 'enemyFound':'Runaway'})
 
         sis = smach_ros.IntrospectionServer('sakusen_server', sm_top, '/SM_TOP')
         sis.start()
@@ -105,10 +99,6 @@ class SakusenNode():
         sis.stop()
         rospy.signal_shutdown('All done.')
 
-#        self.count = 0
-#    def run(self):
-#        self.count += 1
-#        self.sakusen_pub.publish(self.count);
 
 
 if __name__ == '__main__':
